@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri App</title>
+    <title>NodeNote</title>
     <script type="module" src="/main.js" defer></script>
     <style>
       .logo.vanilla:hover {
@@ -14,33 +14,27 @@
   </head>
 
   <body>
-    <div class="container">
-      <h1>Welcome to Tauri!</h1>
+    <div id="main-container">
+        <div id="graph-list">
+            <!-- Dynamically filled with JavaScript -->
+        </div>
+        <button id="create-graph-btn">Create New Graph</button>
+    </div>
 
-      <div class="row">
-        <a href="https://tauri.app" target="_blank">
-          <img src="/assets/tauri.svg" class="logo tauri" alt="Tauri logo" />
-        </a>
-        <a
-          href="https://developer.mozilla.org/en-US/docs/Web/JavaScript"
-          target="_blank"
-        >
-          <img
-            src="/assets/javascript.svg"
-            class="logo vanilla"
-            alt="JavaScript logo"
-          />
-        </a>
-      </div>
+    <!-- Modal for Creating New Graph -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <form id="create-graph-form">
+                <label for="graph-name">Graph Name:</label>
+                <input type="text" id="graph-name" name="graph-name" required>
 
-      <p>Click on the Tauri logo to learn more about the framework</p>
+                <button type="button" id="select-directory">Select Directory</button>
+                <span id="selected-directory-path"></span>
 
-      <form class="row" id="greet-form">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="submit">Greet</button>
-      </form>
-
-      <p id="greet-msg"></p>
+                <button type="submit">Create Graph</button>
+            </form>
+        </div>
     </div>
   </body>
 </html>
