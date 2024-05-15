@@ -1,24 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NodeNote</title>
     <script type="module" src="/main.js" defer></script>
     <style>
-      .logo.vanilla:hover {
-        filter: drop-shadow(0 0 2em #ffe21c);
-      }
+        .logo.vanilla:hover {
+            filter: drop-shadow(0 0 2em #ffe21c);
+        }
     </style>
-  </head>
-
-  <body>
-    <div id="main-container">
-        <div id="graph-list">
-            <!-- Dynamically filled with JavaScript -->
+</head>
+<body>
+    <div class="sidebar">
+        <!-- <div class="logo">
+            <img src="/assets/nodenote.svg" alt="NodeNote Logo" style="width: 100%;">
+        </div> -->
+        <div id="graph-selection-container">
+          <select id="graph-dropdown">
+            <option value="">Select a graph...</option>
+            <option value="create-new">Create New Graph</option>
+            <!-- Other graph options will be dynamically inserted here -->
+          </select>
+          <button id="refresh-graphs" title="Refresh Graphs">&#x21bb;</button> <!-- Unicode character for refresh icon -->
         </div>
-        <button id="create-graph-btn">Create New Graph</button>
+    </div>
+
+    <div class="main-content">
+        <!-- Main content goes here -->
+        <h1>It's still a work in progress</h1>
+        <!-- Additional content -->
     </div>
 
     <!-- Modal for Creating New Graph -->
@@ -28,13 +40,9 @@
             <form id="create-graph-form">
                 <label for="graph-name">Graph Name:</label>
                 <input type="text" id="graph-name" name="graph-name" required>
-
-                <button type="button" id="select-directory">Select Directory</button>
-                <span id="selected-directory-path"></span>
-
                 <button type="submit">Create Graph</button>
             </form>
         </div>
     </div>
-  </body>
+</body>
 </html>

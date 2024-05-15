@@ -23,17 +23,6 @@
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
 .row {
   display: flex;
   justify-content: center;
@@ -74,6 +63,7 @@ button {
 button:hover {
   border-color: #396cd8;
 }
+
 button:active {
   border-color: #396cd8;
   background-color: #e8e8e8;
@@ -84,10 +74,105 @@ button {
   outline: none;
 }
 
-#greet-input {
-  margin-right: 5px;
+/* Sidebar styling */
+.sidebar {
+  height: 100vh;
+  width: 250px; /* Adjust width of the sidebar */
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  left: 0;
+  background-color: #f4f4f4;
+  overflow-x: hidden;
+  padding-top: 20px;
 }
 
+.main-content {
+  margin-left: 250px; /* Same as the width of the sidebar */
+  padding: 1em;
+}
+
+/* Modal styling */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed;
+  z-index: 2;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.logo {
+  width: 25%; /* Ensures the logo fills the sidebar */
+  margin-top: -10px;
+  margin-bottom: 10px; /* Adds some space below the logo */
+  text-align: center; /* Centers the logo if it's smaller than the sidebar width */
+}
+
+#graph-selection-container {
+  display: flex;
+  align-items: center; /* Aligns the dropdown and the refresh button vertically */
+  padding: 0 10px; /* Adds padding inside the selection container */
+}
+
+#graph-dropdown {
+  flex-grow: 1; /* Allows the dropdown to fill the space */
+  margin-right: 10px; /* Adds space between the dropdown and the refresh button */
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #fff; /* Light theme background */
+  color: #0f0f0f; /* Text color for light theme */
+}
+
+#graph-dropdown option[value="create-new"] {
+  font-weight: bold;
+}
+
+#graph-dropdown option[disabled] {
+  font-style: italic;
+  color: gray;
+}
+
+#refresh-graphs {
+  padding: 5px 10px; /* Padding for the refresh button */
+  font-size: 16px; /* Adjusts the size of the refresh icon */
+  cursor: pointer; /* Changes the cursor to a pointer to indicate it's clickable */
+  background-color: #f4f4f4; /* Matches the sidebar background */
+  border: none; /* Removes the border */
+  border-radius: 8px; /* Rounds the corners */
+}
+
+#refresh-graphs:hover {
+  background-color: #e8e8e8; /* Changes background on hover for feedback */
+}
+
+/* Responsive styling for dark mode preference */
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
@@ -103,7 +188,29 @@ button {
     color: #ffffff;
     background-color: #0f0f0f98;
   }
+
   button:active {
     background-color: #0f0f0f69;
+  }
+
+  .sidebar {
+    background-color: #333; /* Dark theme background for sidebar */
+  }
+
+  .modal-content {
+    background-color: #333;
+  }
+
+  #graph-dropdown {
+    background-color: #222; /* Dark theme background for dropdown */
+    color: #f6f6f6; /* Text color for dark theme */
+  }
+
+  #refresh-graphs {
+    background-color: #0f0f0f98;
+  }
+
+  #refresh-graphs:hover {
+    background-color: #25252598;
   }
 }
