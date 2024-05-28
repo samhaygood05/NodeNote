@@ -1,76 +1,73 @@
 use std::path::{PathBuf, Path};
 
-/// Represents a general node in your application, initialized with a markdown file.
+/// Represents a general node in NodeNote, initialized with a name and a root path
 #[derive(Debug, Clone)]
 pub struct Node {
-    /// The base name of the node, derived from the markdown file name without the extension.
-    pub base_name: String,
-    /// Path to the markdown file that serves as the 'root' of the node.
-    pub markdown_path: PathBuf,
-    /// A list of associated file paths, including various extensions and sublabels.
-    pub associated_files: Vec<PathBuf>,
-    /// Optional path to a subfolder representing a subgraph.
-    pub subgraph_path: Option<PathBuf>,
+    /// This is the name of the node
+    pub node_name: String,
+
+    /// This is the folder of the node
+    pub node_path: PathBuf,
+
+    /// This tells NodeNote if the node has a subgraph
+    pub subgraph: bool
 }
 
 impl Node {
-    /// Constructs a new `Node` from a markdown file path.
-    /// Panics if the provided path is not a markdown file.
-    pub fn new(markdown_path: PathBuf) -> Self {
-        if markdown_path.extension().map_or(true, |ext| ext != "md") {
-            panic!("Provided file is not a markdown file");
+    /// Constructs a new `Node` from a name and the root path.
+    pub fn new(node_name: String, node_path: PathBuf) -> Self {
+        if let Err(e) = fs::create_dir_all(&node_path.join(node_name)) {
+            panic!("Failed to create node directory: {}", e);
         }
 
-        let base_name = markdown_path.file_stem()
-            .and_then(|stem| stem.to_str())
-            .map(|s| s.split('.').next().unwrap_or(""))
-            .unwrap_or("")
-            .to_string();
-
         Node {
-            base_name,
-            markdown_path,
-            associated_files: Vec::new(),
-            subgraph_path: None,
+            node_name,
+            node_path,
+            subgraph: false
         }
     }
 
-    /// Constructs a new `Node` from a markdown file path and a prefix.
-    /// Panics if the provided path is not a markdown file.
-    pub fn new(markdown_path: PathBuf, prefix: String) -> Self {
-        if markdown_path.extension().map_or(true, |ext| ext != "md") {
-            panic!("Provided file is not a markdown file");
-        }
+    /// Creates the subgraph for the node
+    pub fn create_subgraph(&mut self) -> std::io::Result<()> {
+        let graph_path = self.node_path.join(node_name).join(".graph");
 
-        let base_name = markdown_path.file_stem()
-            .and_then(|stem| stem.to_str())
-            .map(|s| s.split('.').next().unwrap_or(""))
-            .unwrap_or("")
-            .to_string();
-
-        Node {
-            format!("{}{}", prefix, base_name),
-            markdown_path,
-            associated_files: Vec::new(),
-            subgraph_path: None,
+        if let Err(e) = fs::create_dir_all(&graph_path) {
+            return Err(io::Error::new(io::ErrorKind::Other, format!("Failed to create .graph directory: {}", e)));
         }
+        self.subgraph = true;
+        Ok(())
     }
 
-    /// Adds a file to the node's list of associated files.
-    /// Files are added if they share the same base name regardless of sublabels, separated by periods.
-    pub fn add_file(&mut self, file_path: PathBuf) {
-        if let Some(stem) = file_path.file_stem().and_then(|s| s.to_str()) {
-            // Create a normalized version of the stem where sublabels are included in the comparison
-            let normalized_stem = stem.split('.').next().unwrap_or("");
-            if normalized_stem == self.base_name && file_path != self.markdown_path {
-                self.associated_files.push(file_path);
+    /// Deletes the subgraph of the node if it is empty
+    /// If `ignore_warning` is `true`, it will delete the subgraph even if it is not empty
+    pub fn delete_subgraph(&mut self, ignore_warning: bool) -> io::Result<()> {
+        let graph_path = self.node_path.join(node_name).join(".graph");
+        
+        if graph_path.exists() {
+            if !ignore_warning {
+                let is_empty = fs::read_dir(&graph_path)?.next().is_none();
+                if !is_empty {
+                    return Err(io::Error::new(io::ErrorKind::Other, "Warning: .graph folder is not empty"));
+                }
+            }
+            if let Err(e) = fs::remove_dir_all(&graph_path) {
+                return Err(io::Error::new(io::ErrorKind::Other, format!("Failed to delete .graph directory: {}", e)));
             }
         }
+
+        self.subgraph = false;
+        Ok(())
     }
 
+    /// Renames the node
+    pub fn rename(&mut self, new_name: String) -> io::Result<()> {
+        let old_path = self.node_path.join(node_name);
+        let new_path = self.node_path.join(new_name);
 
-    /// Sets the subgraph path for this node, representing the location of the subgraph.
-    pub fn set_subgraph_path(&mut self, path: PathBuf) {
-        self.subgraph_path = Some(path);
+        if Err(e) = fs::rename(&old_path, &new_path) {
+            return Err(io::Error::new(io::ErrorKind::Other, format!("Failed to rename: {}", e)));
+        }
+        self.node_name = new_name;
+        Ok(())
     }
 }

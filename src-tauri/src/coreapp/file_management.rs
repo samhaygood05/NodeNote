@@ -45,19 +45,25 @@ pub fn get_graph_list() -> Result<Vec<GraphInfo>, String> {
 pub fn create_graph_directories(base_path: String, graph_name: String) -> Result<String, String> {
 
     let graph_path = Path::new(&base_path).join(&graph_name);
-    let notes_path = graph_path.join("Notes");
-    let nodes_path = graph_path.join("Nodes");
+    let notes_path = graph_path.join(".graph");
+    let internal_path = graph_path.join("nodenote");
+    let nodes_path = internal_path.join("nodes");
+    let edges_path = internal_path.join("edges");
 
     // Attempt to create the graph directory and subdirectories
     if let Err(e) = create_dir_all(&notes_path) {
-        return Err(format!("Failed to create notes directory: {}", e));
+        return Err(format!("Failed to create .graph directory: {}", e));
     }
     if let Err(e) = create_dir_all(&nodes_path) {
         return Err(format!("Failed to create nodes directory: {}", e));
     }
 
+    if let Err(e) = create_dir_all(&edges_path) {
+        return Err(format!("Failed to create edges directory: {}", e));
+    }
+
     // Create the config file in the graph directory
-    if let Err(e) = create_config_file(&graph_path) {
+    if let Err(e) = create_config_file(&internal_path) {
         return Err(format!("Failed to create config file: {}", e));
     }
 
