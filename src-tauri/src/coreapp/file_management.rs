@@ -30,6 +30,9 @@ pub fn get_graph_list() -> Result<Vec<GraphInfo>, String> {
         return Err("Graph registry file does not exist".into());
     }
 
+    // Validate the registries
+    validate_graph_registries(true).map_err(|e| e.to_string())?;
+
     // Read the registry file
     let mut file = File::open(registry_path).map_err(|e| e.to_string())?;
     let mut contents = String::new();
@@ -68,7 +71,7 @@ pub fn create_graph_directories(base_path: String, graph_name: String) -> Result
     }
 
     // Update the graph registry
-    if let Err(e) = update_graph_registry(&base_path, &graph_name) {
+    if let Err(e) = add_graph_registry(&base_path, &graph_name) {
         return Err(format!("Failed to update graph registry: {}", e.to_string()));
     }
 
@@ -90,7 +93,7 @@ fn create_config_file(graph_path: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn update_graph_registry(base_path: &str, graph_name: &str) -> io::Result<()> {
+fn add_graph_registry(base_path: &str, graph_name: &str) -> io::Result<()> {
     // Determine the base directory for app data
     let base_data_dir = data_dir().ok_or(io::Error::new(io::ErrorKind::NotFound, "Data directory not found"))?;
     let app_data_dir = base_data_dir.join("NodeNote");
@@ -124,6 +127,136 @@ fn update_graph_registry(base_path: &str, graph_name: &str) -> io::Result<()> {
 
     // Write the updated registry back to the file
     let mut file = OpenOptions::new().write(true).create(true).open(registry_path)?;
+    file.write_all(serde_json::to_string_pretty(&registry)?.as_bytes())?;
+
+    Ok(())
+}
+
+fn update_graph_registry(base_path: &str, graph_name: &str) -> io::Result<()> {
+    // Determine the base directory for app data
+    let base_data_dir = data_dir().ok_or(io::Error::new(io::ErrorKind::NotFound, "Data directory not found"))?;
+    let app_data_dir = base_data_dir.join("NodeNote");
+
+    // Ensure the application-specific directory exists
+    if !app_data_dir.exists() {
+        create_dir_all(&app_data_dir)?;
+    }
+
+    // Specify the path to the graph registry within the application-specific directory
+    let registry_path = app_data_dir.join("graph_registry.json");
+
+    // Load the graph registry
+    let mut registry = if registry_path.exists() {
+        let mut file = File::open(&registry_path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        serde_json::from_str(&contents).unwrap_or_else(|_| json!({ "graphs": [] }))
+    } else {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Graph registry not found"));
+    };
+
+    // Update the "last_opened" field of the specified graph
+    if let Some(graphs) = registry["graphs"].as_array_mut() {
+        for graph in graphs.iter_mut() {
+            if graph["name"] == graph_name && graph["path"] == base_path {
+                graph["last_opened"] = json!(chrono::Utc::now().to_rfc3339());
+                break;
+            }
+        }
+    }
+
+    // Write the updated registry back to the file
+    let mut file = OpenOptions::new().write(true).truncate(true).open(registry_path)?;
+    file.write_all(serde_json::to_string_pretty(&registry)?.as_bytes())?;
+
+    Ok(())
+}
+
+fn remove_graph_registry(base_path: &str, graph_name: &str) -> io::Result<()> {
+    // Determine the base directory for app data
+    let base_data_dir = data_dir().ok_or(io::Error::new(io::ErrorKind::NotFound, "Data directory not found"))?;
+    let app_data_dir = base_data_dir.join("NodeNote");
+
+    // Ensure the application-specific directory exists
+    if !app_data_dir.exists() {
+        create_dir_all(&app_data_dir)?;
+    }
+
+    // Specify the path to the graph registry within the application-specific directory
+    let registry_path = app_data_dir.join("graph_registry.json");
+
+    // Load the graph registry
+    let mut registry = if registry_path.exists() {
+        let mut file = File::open(&registry_path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        serde_json::from_str(&contents).unwrap_or_else(|_| json!({ "graphs": [] }))
+    } else {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Graph registry not found"));
+    };
+
+    // Remove the specified graph from the registry
+    if let Some(graphs) = registry["graphs"].as_array_mut() {
+        graphs.retain(|graph| !(graph["name"] == graph_name && graph["path"] == base_path));
+    }
+
+    // Write the updated registry back to the file
+    let mut file = OpenOptions::new().write(true).truncate(true).open(registry_path)?;
+    file.write_all(serde_json::to_string_pretty(&registry)?.as_bytes())?;
+
+    Ok(())
+}
+
+fn validate_graph_registries(clean_invalid: bool) -> io::Result<()> {
+    // Determine the base directory for app data
+    let base_data_dir = data_dir().ok_or(io::Error::new(io::ErrorKind::NotFound, "Data directory not found"))?;
+    let app_data_dir = base_data_dir.join("NodeNote");
+
+    // Ensure the application-specific directory exists
+    if !app_data_dir.exists() {
+        create_dir_all(&app_data_dir)?;
+    }
+
+    // Specify the path to the graph registry within the application-specific directory
+    let registry_path = app_data_dir.join("graph_registry.json");
+
+    // Load the graph registry
+    let mut registry = if registry_path.exists() {
+        let mut file = File::open(&registry_path)?;
+        let mut contents = String::new();
+        file.read_to_string(&mut contents)?;
+        serde_json::from_str(&contents).unwrap_or_else(|_| json!({ "graphs": [] }))
+    } else {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "Graph registry not found"));
+    };
+
+    // Validate each graph registry entry
+    if let Some(graphs) = registry["graphs"].as_array_mut() {
+        let mut invalid_graphs = Vec::new();
+
+        for graph in graphs.iter_mut() {
+            let path = graph["path"].as_str().unwrap_or("");
+            let name = graph["name"].as_str().unwrap_or("");
+            if Path::new(path).join(name).exists() {
+                graph["validated"] = json!(true);
+            } else {
+                graph["validated"] = json!(false);
+                if clean_invalid {
+                    invalid_graphs.push(graph.clone());
+                }
+            }
+        }
+
+        // Remove invalid graphs if clean_invalid is true
+        if clean_invalid {
+            for invalid_graph in invalid_graphs {
+                graphs.retain(|graph| graph != &invalid_graph);
+            }
+        }
+    }
+
+    // Write the updated registry back to the file
+    let mut file = OpenOptions::new().write(true).truncate(true).open(registry_path)?;
     file.write_all(serde_json::to_string_pretty(&registry)?.as_bytes())?;
 
     Ok(())
